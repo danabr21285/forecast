@@ -1,0 +1,41 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+# Set working directory
+setwd("your_working_directory")
+
+# Load dataset
+XYZdf <- read.csv("yearly_activity_data.csv")
+
+# Plot the time series
+ggplot(data = XYZdf, aes(x = Year, y = Purchases)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Purchases by Year (2020–2024)",
+       x = "Year",
+       y = "Purchases")
+
+# Add a numeric time variable
+XYZdf$Time <- 1:nrow(XYZdf)
+
+# Fit a linear regression model
+model <- lm(Purchases ~ Time, data = XYZdf)
+summary(model)
+
+# Forecast purchases for 2025 (Time = 6)
+new_time <- data.frame(Time = 6)
+predict(model, newdata = new_time)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
