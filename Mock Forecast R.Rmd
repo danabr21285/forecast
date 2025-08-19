@@ -1,41 +1,82 @@
----
-title: "R Notebook"
-output: html_notebook
----
+# --- 1. Setup ---
+# Load the required libraries
+library(ggplot2)
+library(dplyr)
+library(ggfortify) # For model diagnostic plots
+library(scales)   # For formatting numbers
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-```{r}
-# Set working directory
-setwd("your_working_directory")
-
-# Load dataset
+# --- 2. Load and Explore Data ---
+# Load your dataset
 XYZdf <- read.csv("yearly_activity_data.csv")
 
-# Plot the time series
-ggplot(data = XYZdf, aes(x = Year, y = Purchases)) +
-  geom_line() +
-  geom_point() +
-  labs(title = "Purchases by Year (2020–2024)",
-       x = "Year",
-       y = "Purchases")
+# >> PLOT 1: Initial Time Series Plot
+initial_plot <- ggplot(data = XYZdf, aes(x = Year, y = Purchases)) +
+  geom_line(color = "#0072B2", linewidth = 1) +
+  geom_point(color = "#0072B2", size = 3, shape = 21, fill = "white", stroke = 1.5) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Annual Purchases Show a Sharp Increase",
+    subtitle = "Data from 2020 to 2024",
+    x = "Year",
+    y = "Number of Purchases"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
 
-# Add a numeric time variable
+# Save the plot
+ggsave("1_initial_purchases_plot.png", plot = initial_plot, width = 8, height = 5)
+
+
+# --- 3. Fit a Linear Model ---
 XYZdf$Time <- 1:nrow(XYZdf)
-
-# Fit a linear regression model
 model <- lm(Purchases ~ Time, data = XYZdf)
-summary(model)
 
-# Forecast purchases for 2025 (Time = 6)
-new_time <- data.frame(Time = 6)
-predict(model, newdata = new_time)
-```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+# --- 4. Visualize Model Diagnostics---
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+# >> PLOT 2: Residuals vs. Fitted Plot
+# This helps check for linearity. We want to see no clear pattern.
+residuals_plot <- autoplot(model, which = 1, label.size = 3, colour = '#0072B2') +
+  theme_minimal(base_size = 14) +
+  labs(title = "Residuals vs. Fitted Values")
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+ggsave("2_residuals_vs_fitted.png", plot = residuals_plot, width = 7, height = 5)
+
+
+# >> PLOT 3: Normal Q-Q Plot
+# This checks if residuals are normally distributed. Points should be on the line.
+qq_plot <- autoplot(model, which = 2, label.size = 3, colour = '#0072B2') +
+  theme_minimal(base_size = 14) +
+  labs(title = "Normal Q-Q Plot of Residuals")
+
+ggsave("3_normal_qq_plot.png", plot = qq_plot, width = 7, height = 5)
+
+
+# --- 5. Create and Visualize the Forecast ---
+predicted_purchases <- predict(model, newdata = data.frame(Time = 6))
+
+forecast_df <- data.frame(
+  Year = 2025,
+  Purchases = predicted_purchases
+)
+
+# >> PLOT 4: Forecast Plot
+forecast_plot <- ggplot(data = XYZdf, aes(x = Year, y = Purchases)) +
+  geom_line(color = "gray80", linewidth = 1) +
+  geom_point(color = "gray50", size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "#0072B2", linetype = "dashed") +
+  geom_point(data = forecast_df, aes(x = Year, y = Purchases), color = "#D55E00", size = 5, shape = 18) +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "Annual Purchases with Linear Trend and 2025 Forecast",
+    subtitle = "The orange diamond represents the forecast for the next period.",
+    x = "Year",
+    y = "Number of Purchases"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+
+ggsave("4_forecast_plot.png", plot = forecast_plot, width = 8, height = 6)
+
+
+
